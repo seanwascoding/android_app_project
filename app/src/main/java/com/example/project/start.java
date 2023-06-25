@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -13,6 +15,8 @@ public class start extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
+
+        Intent intent_temp=getIntent();
 
         //change activity to audio
         Button selectAudioButton = findViewById(R.id.select_audio_button);
@@ -37,6 +41,9 @@ public class start extends AppCompatActivity {
 
         //websocket
         Button websocket=findViewById(R.id.websocket);
-        websocket.setOnClickListener(v->startActivity(new Intent(this, webSocket.class)));
+        websocket.setOnClickListener(v->{
+            Intent websocket_intent=new Intent(this, webSocket.class).putExtra("name",intent_temp.getStringExtra("name"));
+            startActivity(websocket_intent);
+        });
     }
 }

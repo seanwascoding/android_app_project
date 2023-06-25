@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -23,16 +24,17 @@ import java.net.URL;
 
 public class login extends AppCompatActivity {
 
+    EditText address;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
-        EditText address = findViewById(R.id.address);
+        address = findViewById(R.id.address);
         EditText password = findViewById(R.id.password);
         Button login = findViewById(R.id.login);
         Button register = findViewById(R.id.register);
-
 
         login.setOnClickListener(v -> {
             if (address.length() < 1 || password.length() < 1) {
@@ -110,7 +112,8 @@ public class login extends AppCompatActivity {
                     if (stringBuilder.toString().equals("login successfully")) {
                         // 顯示 Toast 訊息
                         runOnUiThread(() -> Toast.makeText(login.this, stringBuilder.toString(), Toast.LENGTH_SHORT).show());
-                        startActivity(new Intent(login.this, start.class));
+                        Intent intent=new Intent(login.this, start.class).putExtra("name", address.getText().toString());
+                        startActivity(intent);
                     } else {
                         runOnUiThread(() -> Toast.makeText(login.this, stringBuilder.toString(), Toast.LENGTH_SHORT).show());
                     }
@@ -170,7 +173,8 @@ public class login extends AppCompatActivity {
                     if (stringBuilder.toString().equals("working to create")) {
                         // 顯示 Toast 訊息
                         runOnUiThread(() -> Toast.makeText(login.this, stringBuilder.toString(), Toast.LENGTH_SHORT).show());
-                        startActivity(new Intent(login.this, start.class));
+                        Intent intent=new Intent(login.this, start.class).putExtra("name", address.getText().toString());
+                        startActivity(intent);
                     } else {
                         runOnUiThread(() -> Toast.makeText(login.this, stringBuilder.toString(), Toast.LENGTH_SHORT).show());
                     }
