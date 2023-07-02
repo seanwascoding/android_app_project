@@ -3,6 +3,7 @@ package com.example.project;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.documentfile.provider.DocumentFile;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentUris;
@@ -27,21 +28,15 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.ByteBuffer;
 import java.util.Random;
 
 public class webSocket extends AppCompatActivity {
@@ -49,7 +44,7 @@ public class webSocket extends AppCompatActivity {
     //    private WebSocketClient webSocketClient = null;
     ConstraintLayout rootlayout;
     TextView random_value;
-    String address = "192.168.1.108";
+    String address = "35.201.216.81";
     ImageView imageView;
     Uri uri;
     File imageFile;
@@ -116,9 +111,9 @@ public class webSocket extends AppCompatActivity {
         select.setOnClickListener(v -> {
             Log.d("select", "clicked");
             Intent i = new Intent();
-            i.setType("image/*");
-            i.setAction(Intent.ACTION_GET_CONTENT);
-            //i.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+            i.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
+            i.setAction(Intent.ACTION_PICK);
+//            i.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
             startActivityForResult(i, 1);
         });
 
@@ -133,7 +128,6 @@ public class webSocket extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             String message = intent.getStringExtra("services");
 //            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
-
             if (message.equals("client working connected")) {
                 runOnUiThread(() -> {
                     rootlayout.setBackgroundColor(Color.MAGENTA);
@@ -147,8 +141,10 @@ public class webSocket extends AppCompatActivity {
                     select.setVisibility(View.INVISIBLE);
                 });
             } else if (message.equals("image")) {
-                byte[] imageData = intent.getByteArrayExtra("image");
-                Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+                Log.d("test", "recieve");
+                String filepath = intent.getStringExtra("image");
+                File file = new File(filepath);
+                Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
                 runOnUiThread(() -> imageView.setImageBitmap(bitmap));
             } else if (message.length() > 1) {
                 runOnUiThread(() -> random_value.setText(message));
@@ -164,15 +160,18 @@ public class webSocket extends AppCompatActivity {
         if (requestCode == 1 && resultCode == RESULT_OK && data.getData() != null) {
             uri = data.getData();
             /** 將 URI 轉換為 File 對象(實際位置) */
-            String filePath = getRealPathFromUri(webSocket.this, uri);
-            imageFile = new File(filePath);
-            Log.d("filepath", filePath);
+            String filePath = getPathFromUri(webSocket.this, uri);
+            if (filePath == null) {
+                Toast.makeText(this, "error address", Toast.LENGTH_SHORT).show();
+            } else {
+                Log.d("filepath", filePath);
+                imageFile = new File(filePath);
 
-            /** 放入照片 */
-            imageView.setImageURI(uri);
+                /** 放入照片 */
+                imageView.setImageURI(uri);
 
-            new PostData().execute(imageFile);
-
+                new PostData().execute(imageFile);
+            }
         } else {
             Toast.makeText(this, "返回頁面", Toast.LENGTH_SHORT).show();
         }
@@ -307,13 +306,34 @@ public class webSocket extends AppCompatActivity {
                 outputStream.writeBytes(header);
 
                 // Write the actual image data
-                FileInputStream inputStream = new FileInputStream(imageFile);
-                byte[] buffer = new byte[4096];
-                int bytesRead;
-                while ((bytesRead = inputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
+                InputStream inputStream = null;
+                try {
+                    inputStream = getContentResolver().openInputStream(uri);
+                    // 在这里处理文件输入流
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } finally {
+                    if (inputStream != null) {
+                        try {
+                            inputStream.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
-                inputStream.close();
+
+//                FileInputStream inputStream = new FileInputStream(imageFile);
+//                byte[] buffer = new byte[4096];
+//                int bytesRead;
+//                while ((bytesRead = inputStream.read(buffer)) != -1) {
+//                    outputStream.write(buffer, 0, bytesRead);
+//                }
+//                inputStream.close();
 
                 // Write the closing boundary
                 String footer = "\r\n--" + boundary + "--\r\n";
@@ -389,8 +409,59 @@ public class webSocket extends AppCompatActivity {
         } else if ("file".equalsIgnoreCase(uri.getScheme())) {
             filePath = uri.getPath();
         }
-        Toast.makeText(getApplicationContext(), "transfer to file", Toast.LENGTH_SHORT).show();
+        Toast.makeText(getApplicationContext(), filePath, Toast.LENGTH_SHORT).show();
         return filePath;
+    }
+
+    public String getPathFromUri(final Context context, final Uri uri) {
+        if (DocumentsContract.isDocumentUri(context, uri)) {
+            if (isExternalStorageDocument(uri)) {
+                final String docId = DocumentsContract.getDocumentId(uri);
+                final String[] split = docId.split(":");
+                final String type = split[0];
+
+                if ("primary".equalsIgnoreCase(type)) {
+                    return Environment.getExternalStorageDirectory() + "/" + split[1];
+                }
+
+                // TODO handle non-primary volumes
+            } else if (isDownloadsDocument(uri)) {
+                final String id = DocumentsContract.getDocumentId(uri);
+                final Uri contentUri = ContentUris.withAppendedId(
+                        Uri.parse("content://downloads/public_downloads"), Long.valueOf(id));
+
+                return getDataColumn(context, contentUri, null, null);
+            } else if (isMediaDocument(uri)) {
+                final String docId = DocumentsContract.getDocumentId(uri);
+                final String[] split = docId.split(":");
+                final String type = split[0];
+
+                Uri contentUri = null;
+                if ("image".equals(type)) {
+                    contentUri = MediaStore.Images.Media.EXTERNAL_CONTENT_URI;
+                } else if ("video".equals(type)) {
+                    contentUri = MediaStore.Video.Media.EXTERNAL_CONTENT_URI;
+                } else if ("audio".equals(type)) {
+                    contentUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+                }
+
+                final String selection = "_id=?";
+                final String[] selectionArgs = new String[]{split[1]};
+
+                return getDataColumn(context, contentUri, selection, selectionArgs);
+            } else if (isGoogleDriveDocument(uri)) {
+                DocumentFile documentFile = DocumentFile.fromSingleUri(context, uri);
+                String path = documentFile.getUri().getPath();
+                if (path != null) {
+                    return path.substring(path.indexOf(":") + 1);
+                }
+            }
+        } else if ("content".equalsIgnoreCase(uri.getScheme())) {
+            return uri.toString();
+        } else if ("file".equalsIgnoreCase(uri.getScheme())) {
+            return uri.getPath();
+        }
+        return null;
     }
 
     public String getDataColumn(Context context, Uri uri, String selection, String[] selectionArgs) {
@@ -421,6 +492,10 @@ public class webSocket extends AppCompatActivity {
 
     public boolean isMediaDocument(Uri uri) {
         return "com.android.providers.media.documents".equals(uri.getAuthority());
+    }
+
+    private boolean isGoogleDriveDocument(Uri uri) {
+        return "com.google.android.apps.docs.storage".equals(uri.getAuthority());
     }
 
     @Override

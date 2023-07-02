@@ -81,7 +81,7 @@ public class login extends AppCompatActivity {
         protected String doInBackground(String... strings) {
             try {
                 // on below line creating a url to post the data.
-                URL url = new URL("http://192.168.1.108:8080/login");
+                URL url = new URL("http://35.201.216.81:8080/login");
 
                 // on below line opening the connection.
                 HttpURLConnection client = (HttpURLConnection) url.openConnection();
@@ -144,7 +144,7 @@ public class login extends AppCompatActivity {
         protected String doInBackground(String... strings) {
             try {
                 // on below line creating a url to post the data.
-                URL url = new URL("http://192.168.1.108:8080/registe");
+                URL url = new URL("http://35.201.216.81:8080/registe");
 
                 // on below line opening the connection.
                 HttpURLConnection client = (HttpURLConnection) url.openConnection();
@@ -183,6 +183,13 @@ public class login extends AppCompatActivity {
                         runOnUiThread(() -> Toast.makeText(login.this, stringBuilder.toString(), Toast.LENGTH_SHORT).show());
                         Intent intent=new Intent(login.this, start.class).putExtra("name", address.getText().toString());
                         startActivity(intent);
+                        //
+                        Intent intent1 = new Intent(login.this, WebSocket_Service.class);
+                        intent1.setAction("ACTION_MESSAGE");
+                        intent1.putExtra("state", "3");
+                        intent1.putExtra("message", address.getText().toString());
+                        startService(intent1);
+                        finish();
                     } else {
                         runOnUiThread(() -> Toast.makeText(login.this, stringBuilder.toString(), Toast.LENGTH_SHORT).show());
                     }

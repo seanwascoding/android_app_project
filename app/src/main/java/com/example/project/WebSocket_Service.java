@@ -10,11 +10,17 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
@@ -22,7 +28,7 @@ import java.nio.ByteBuffer;
 public class WebSocket_Service extends Service {
 
     private WebSocketClient webSocketClient = null;
-    String address = "192.168.1.108";
+    String address = "35.201.216.81";
     Intent intent;
 
     @Override
@@ -59,7 +65,7 @@ public class WebSocket_Service extends Service {
                 }
             }
         }
-        Log.d("onStartCommand", "test");
+//        Log.d("onStartCommand", "test");
         return super.onStartCommand(intent, flags, startId);
     }
 
@@ -90,13 +96,24 @@ public class WebSocket_Service extends Service {
 
             @Override
             public void onMessage(ByteBuffer bytes) {
-                // 收到二进制消息（图像数据）
-                byte[] imageData = bytes.array();
-                System.out.println("onMessage: Received image data");
-                // 在这里处理接收到的图像数据
-                intent.putExtra("services", "image");
-                intent.putExtra("image", imageData);
-                sendBroadcast(intent);
+                try {
+                    // 收到二进制消息（图像数据）
+                    byte[] imageData = bytes.array();
+                    System.out.println("onMessage: Received image data");
+                    //
+                    File file = new File(getCacheDir(), "image.png");
+                    FileOutputStream outputStream = new FileOutputStream(file);
+                    outputStream.write(imageData);
+                    outputStream.close();
+                    // 在这里处理接收到的图像数据
+                    intent.putExtra("services", "image");
+                    intent.putExtra("image", file.getAbsoluteFile().toString());
+                    sendBroadcast(intent);
+                } catch (FileNotFoundException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
 
             @Override
