@@ -1,15 +1,21 @@
 package com.example.project;
 
+import android.app.DownloadManager;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
+import android.os.Environment;
 import android.os.IBinder;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.core.content.FileProvider;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.java_websocket.client.WebSocketClient;
@@ -18,17 +24,19 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
 public class WebSocket_Service extends Service {
 
     private WebSocketClient webSocketClient = null;
-    String address = "35.201.216.81";
+    String address = "34.81.249.124";
     Intent intent;
 
     @Override
@@ -105,12 +113,11 @@ public class WebSocket_Service extends Service {
                     FileOutputStream outputStream = new FileOutputStream(file);
                     outputStream.write(imageData);
                     outputStream.close();
+
                     // 在这里处理接收到的图像数据
                     intent.putExtra("services", "image");
                     intent.putExtra("image", file.getAbsoluteFile().toString());
                     sendBroadcast(intent);
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -126,6 +133,7 @@ public class WebSocket_Service extends Service {
             public void onError(Exception ex) {
                 // 連線錯誤
                 Log.d("error", "error connect");
+                Toast.makeText(WebSocket_Service.this, "restart app", Toast.LENGTH_SHORT).show();
             }
         };
 
@@ -139,5 +147,4 @@ public class WebSocket_Service extends Service {
         Log.d("destory", "work");
         webSocketClient.close();
     }
-
 }

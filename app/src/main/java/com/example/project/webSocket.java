@@ -3,8 +3,12 @@ package com.example.project;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.documentfile.provider.DocumentFile;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentUris;
 import android.content.Context;
@@ -14,8 +18,11 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
@@ -32,6 +39,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -44,12 +52,14 @@ public class webSocket extends AppCompatActivity {
     //    private WebSocketClient webSocketClient = null;
     ConstraintLayout rootlayout;
     TextView random_value;
-    String address = "35.201.216.81";
+    String address = "34.81.249.124";
     ImageView imageView;
     Uri uri;
     File imageFile;
     Button select;
     EditText enter_keywords;
+    Button download;
+    Button delete;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +73,8 @@ public class webSocket extends AppCompatActivity {
         Button post_keywords = findViewById(R.id.post_keywords);
         select = findViewById(R.id.select);
         imageView = findViewById(R.id.image_data);
+        download = findViewById(R.id.download);
+        delete = findViewById(R.id.delete);
 
         /** create randonm room key */
         create_random_value.setOnClickListener(v -> {
@@ -94,7 +106,7 @@ public class webSocket extends AppCompatActivity {
                 intent.putExtra("message", enter_keywords.getText().toString());
                 intent.setAction("ACTION_MESSAGE");
                 startService(intent);
-//                try {
+//                try {mBfLXtWxuL
 //                    JSONObject jsonObject = new JSONObject();
 //                    jsonObject.put("1", enter_keywords.getText());
 //                    String jsonString = jsonObject.toString();
@@ -105,6 +117,7 @@ public class webSocket extends AppCompatActivity {
 //                    e.printStackTrace();
 //                }
             }
+            enter_keywords.setText(null);
         });
 
         /** select image */
@@ -115,6 +128,39 @@ public class webSocket extends AppCompatActivity {
             i.setAction(Intent.ACTION_PICK);
 //            i.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
             startActivityForResult(i, 1);
+        });
+
+        /** download / delete */
+        download.setOnClickListener(v -> {
+            Drawable drawable = imageView.getDrawable();
+            if (drawable instanceof BitmapDrawable) {
+                Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+                String downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString();
+                String fileName = "test.png";
+                File file = new File(downloadDir, fileName);
+                try {
+                    // 寫入文件
+                    FileOutputStream outputStream = new FileOutputStream(file);
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+                    outputStream.close();
+                    // 呼叫系統檢查更新media
+                    Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                    intent.setData(Uri.fromFile(file));
+                    sendBroadcast(intent);
+
+                    Toast.makeText(this, "download complete", Toast.LENGTH_SHORT).show();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                Toast.makeText(this, "error", Toast.LENGTH_SHORT).show();
+            }
+        });
+        delete.setOnClickListener(v -> {
+            imageView.setImageBitmap(null);
+            download.setEnabled(false);
+            delete.setEnabled(false);
         });
 
         /** braadcast */
@@ -146,6 +192,10 @@ public class webSocket extends AppCompatActivity {
                 File file = new File(filepath);
                 Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
                 runOnUiThread(() -> imageView.setImageBitmap(bitmap));
+                if (imageView != null) {
+                    download.setEnabled(true);
+                    delete.setEnabled(true);
+                }
             } else if (message.length() > 1) {
                 runOnUiThread(() -> random_value.setText(message));
             } else {
@@ -169,6 +219,11 @@ public class webSocket extends AppCompatActivity {
 
                 /** 放入照片 */
                 imageView.setImageURI(uri);
+
+                if (imageView != null) {
+                    download.setEnabled(true);
+                    delete.setEnabled(true);
+                }
 
                 new PostData().execute(imageFile);
             }

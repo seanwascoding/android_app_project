@@ -75,13 +75,12 @@ public class login extends AppCompatActivity {
 
     }
 
-
     class PostDate extends AsyncTask<String, Void, String> {
         @Override
         protected String doInBackground(String... strings) {
             try {
                 // on below line creating a url to post the data.
-                URL url = new URL("http://35.201.216.81:8080/login");
+                URL url = new URL("http://34.81.249.124:8080/login");
 
                 // on below line opening the connection.
                 HttpURLConnection client = (HttpURLConnection) url.openConnection();
@@ -144,7 +143,7 @@ public class login extends AppCompatActivity {
         protected String doInBackground(String... strings) {
             try {
                 // on below line creating a url to post the data.
-                URL url = new URL("http://35.201.216.81:8080/registe");
+                URL url = new URL("http://34.81.249.124:8080/registe");
 
                 // on below line opening the connection.
                 HttpURLConnection client = (HttpURLConnection) url.openConnection();
