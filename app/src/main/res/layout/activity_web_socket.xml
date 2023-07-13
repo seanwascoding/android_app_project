@@ -158,4 +158,23 @@
         android:text="移除"
         app:layout_constraintEnd_toStartOf="@+id/guideline4"
         app:layout_constraintTop_toTopOf="@+id/guideline6" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/image_gallery"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/guideline6"
+        app:layout_constraintEnd_toStartOf="@+id/guideline3"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/guideline5" />
+
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/guideline6"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/guideline4"
+        app:layout_constraintTop_toTopOf="@+id/guideline5">
+
+    </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

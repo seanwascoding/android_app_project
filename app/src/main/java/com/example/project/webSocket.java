@@ -6,10 +6,13 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.documentfile.provider.DocumentFile;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
+import android.content.ClipData;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
@@ -45,11 +48,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Random;
 
 public class webSocket extends AppCompatActivity {
 
-    //    private WebSocketClient webSocketClient = null;
     ConstraintLayout rootlayout;
     TextView random_value;
     String address = "34.81.249.124";
@@ -60,6 +63,9 @@ public class webSocket extends AppCompatActivity {
     EditText enter_keywords;
     Button download;
     Button delete;
+    ArrayList<item> items = new ArrayList<>();
+    Adapter adapter = new Adapter(items, R.layout.image_recycle);
+    RecyclerView recyclerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +81,7 @@ public class webSocket extends AppCompatActivity {
         imageView = findViewById(R.id.image_data);
         download = findViewById(R.id.download);
         delete = findViewById(R.id.delete);
+        recyclerView = findViewById(R.id.image_gallery);
 
         /** create randonm room key */
         create_random_value.setOnClickListener(v -> {
@@ -122,11 +129,12 @@ public class webSocket extends AppCompatActivity {
 
         /** select image */
         select.setOnClickListener(v -> {
+            items.clear();
             Log.d("select", "clicked");
             Intent i = new Intent();
             i.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
-            i.setAction(Intent.ACTION_PICK);
-//            i.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
+            i.setAction(Intent.ACTION_PICK); // only select image
+            i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true); //only available in Android API 18 and higher
             startActivityForResult(i, 1);
         });
 
@@ -167,6 +175,10 @@ public class webSocket extends AppCompatActivity {
         IntentFilter intentFilter = new IntentFilter("service");
         registerReceiver(broadcastReceiver, intentFilter);
 
+        /** recyclerview */
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
+        linearLayoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
+        recyclerView.setLayoutManager(linearLayoutManager);
     }
 
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
@@ -207,28 +219,48 @@ public class webSocket extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        Toast.makeText(this, "entry", Toast.LENGTH_SHORT).show();
+
         if (requestCode == 1 && resultCode == RESULT_OK && data.getData() != null) {
+            /** single image */
             uri = data.getData();
-            /** 將 URI 轉換為 File 對象(實際位置) */
-            String filePath = getPathFromUri(webSocket.this, uri);
+            // 將 URI 轉換為 File 對象(實際位置) => 可移除
+//            String filePath = getPathFromUri(webSocket.this, uri);
+            String filePath = uri.toString();
             if (filePath == null) {
                 Toast.makeText(this, "error address", Toast.LENGTH_SHORT).show();
             } else {
+                Toast.makeText(this, "not null", Toast.LENGTH_SHORT).show();
                 Log.d("filepath", filePath);
                 imageFile = new File(filePath);
-
                 /** 放入照片 */
                 imageView.setImageURI(uri);
-
                 if (imageView != null) {
                     download.setEnabled(true);
                     delete.setEnabled(true);
                 }
-
                 new PostData().execute(imageFile);
             }
+        } else if (requestCode == 1 && resultCode == RESULT_OK && data.getClipData() != null) {
+            /** multiple image */
+            ClipData clipData = data.getClipData();
+            for (int i = 0; i < clipData.getItemCount(); i++) {
+                ClipData.Item item = clipData.getItemAt(i);
+                uri = item.getUri();
+                items.add(new item(uri));
+            }
+            recyclerView.setAdapter(adapter);
+            if (imageView != null) {
+                download.setEnabled(true);
+                delete.setEnabled(true);
+            }
+            Toast.makeText(this, "ClipData", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, "返回頁面", Toast.LENGTH_SHORT).show();
+            Log.d("error message", String.valueOf(resultCode));
+            if (data == null) {
+                Toast.makeText(this, "data is null", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
@@ -512,6 +544,7 @@ public class webSocket extends AppCompatActivity {
                 }
             }
         } else if ("content".equalsIgnoreCase(uri.getScheme())) {
+            // action_pick
             return uri.toString();
         } else if ("file".equalsIgnoreCase(uri.getScheme())) {
             return uri.getPath();
