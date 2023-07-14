@@ -43,7 +43,7 @@ public class WebSocket_Service extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d("start", "created");
-        connectWebSocket();
+//        connectWebSocket();
         intent = new Intent("service");
 //        intent.putExtra("test", "work");
 //        sendBroadcast(intent);
@@ -58,6 +58,10 @@ public class WebSocket_Service extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
+            if (webSocketClient==null) {
+                Log.d("connect", "reconnect");
+                connectWebSocket();
+            }
             String action = intent.getAction();
             /** message */
             if (action != null && action.equals("ACTION_MESSAGE")) {
@@ -71,6 +75,10 @@ public class WebSocket_Service extends Service {
                         e.printStackTrace();
                     }
                 }
+            } else if (action != null && action.equals("CLOSING_WEBSOCKET")) {
+                Log.d("test", webSocketClient.getReadyState().toString());
+                webSocketClient.close();
+                webSocketClient=null;
             }
         }
 //        Log.d("onStartCommand", "test");
@@ -145,6 +153,5 @@ public class WebSocket_Service extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d("destory", "work");
-        webSocketClient.close();
     }
 }

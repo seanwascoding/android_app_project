@@ -32,6 +32,10 @@ public class Adapter extends RecyclerView.Adapter<Adapter.ViewHolder> {
         return data.size();
     }
 
+    public ArrayList<item> getItems(){
+        return data;
+    }
+
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int position) {
         View v = LayoutInflater.from(viewGroup.getContext())

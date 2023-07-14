@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.FileProvider;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -41,6 +42,7 @@ import android.widget.Toast;
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -56,7 +58,7 @@ public class webSocket extends AppCompatActivity {
     ConstraintLayout rootlayout;
     TextView random_value;
     String address = "34.81.249.124";
-    ImageView imageView;
+    //    ImageView imageView;
     Uri uri;
     File imageFile;
     Button select;
@@ -66,6 +68,7 @@ public class webSocket extends AppCompatActivity {
     ArrayList<item> items = new ArrayList<>();
     Adapter adapter = new Adapter(items, R.layout.image_recycle);
     RecyclerView recyclerView;
+    String filepath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,12 +81,12 @@ public class webSocket extends AppCompatActivity {
         enter_keywords = findViewById(R.id.enter_keywords);
         Button post_keywords = findViewById(R.id.post_keywords);
         select = findViewById(R.id.select);
-        imageView = findViewById(R.id.image_data);
+//        imageView = findViewById(R.id.image_data);
         download = findViewById(R.id.download);
         delete = findViewById(R.id.delete);
         recyclerView = findViewById(R.id.image_gallery);
 
-        /** create randonm room key */
+        /** create random room key */
         create_random_value.setOnClickListener(v -> {
             StringBuilder random_temp = new StringBuilder(generateRandomValue(10));
             Log.d("random", random_temp.toString());
@@ -140,23 +143,41 @@ public class webSocket extends AppCompatActivity {
 
         /** download / delete */
         download.setOnClickListener(v -> {
-            Drawable drawable = imageView.getDrawable();
-            if (drawable instanceof BitmapDrawable) {
-                Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
+//            Drawable drawable = imageView.getDrawable();
+            if (recyclerView.getAdapter() != null && recyclerView.getAdapter().getItemCount() > 0) {
+//                Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
                 String downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString();
                 String fileName = "test.png";
                 File file = new File(downloadDir, fileName);
                 try {
+                    // 讀取文件
+//                    InputStream inputStream = getContentResolver().openInputStream(uri);
+                    FileInputStream inputStream = new FileInputStream(filepath);
+
                     // 寫入文件
                     FileOutputStream outputStream = new FileOutputStream(file);
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+//                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+
+                    // 複製資料
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                    }
+
+                    // close stream
                     outputStream.close();
+                    inputStream.close();
+                    filepath = null;
+
                     // 呼叫系統檢查更新media
                     Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
                     intent.setData(Uri.fromFile(file));
                     sendBroadcast(intent);
-
                     Toast.makeText(this, "download complete", Toast.LENGTH_SHORT).show();
+
+                    //
+                    download.setEnabled(false);
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -166,14 +187,20 @@ public class webSocket extends AppCompatActivity {
             }
         });
         delete.setOnClickListener(v -> {
-            imageView.setImageBitmap(null);
+            items.clear();
+            recyclerView.setAdapter(adapter);
+//            imageView.setImageBitmap(null);
             download.setEnabled(false);
             delete.setEnabled(false);
         });
 
-        /** braadcast */
+        /** broadcast */
         IntentFilter intentFilter = new IntentFilter("service");
         registerReceiver(broadcastReceiver, intentFilter);
+        Intent intent = new Intent(this, WebSocket_Service.class);
+
+        /** test websocket state */
+        startService(intent);
 
         /** recyclerview */
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this);
@@ -200,11 +227,16 @@ public class webSocket extends AppCompatActivity {
                 });
             } else if (message.equals("image")) {
                 Log.d("test", "recieve");
-                String filepath = intent.getStringExtra("image");
-                File file = new File(filepath);
-                Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
-                runOnUiThread(() -> imageView.setImageBitmap(bitmap));
-                if (imageView != null) {
+                filepath = intent.getStringExtra("image");
+//                File file = new File(filepath);
+//                Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+//                runOnUiThread(() -> imageView.setImageBitmap(bitmap));
+                uri = Uri.parse(filepath);
+//                uri = FileProvider.getUriForFile(context, "com.example.project.fileprovider", file);
+                items.clear();
+                items.add(new item(uri));
+                recyclerView.setAdapter(adapter);
+                if (recyclerView.getAdapter() != null && recyclerView.getAdapter().getItemCount() > 0) {
                     download.setEnabled(true);
                     delete.setEnabled(true);
                 }
@@ -220,7 +252,6 @@ public class webSocket extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         Toast.makeText(this, "entry", Toast.LENGTH_SHORT).show();
-
         if (requestCode == 1 && resultCode == RESULT_OK && data.getData() != null) {
             /** single image */
             uri = data.getData();
@@ -234,9 +265,11 @@ public class webSocket extends AppCompatActivity {
                 Log.d("filepath", filePath);
                 imageFile = new File(filePath);
                 /** 放入照片 */
-                imageView.setImageURI(uri);
-                if (imageView != null) {
-                    download.setEnabled(true);
+//                imageView.setImageURI(uri);
+                items.add(new item(uri));
+                recyclerView.setAdapter(adapter);
+                if (recyclerView.getAdapter() != null && recyclerView.getAdapter().getItemCount() > 0) {
+                    download.setEnabled(false);
                     delete.setEnabled(true);
                 }
                 new PostData().execute(imageFile);
@@ -244,17 +277,20 @@ public class webSocket extends AppCompatActivity {
         } else if (requestCode == 1 && resultCode == RESULT_OK && data.getClipData() != null) {
             /** multiple image */
             ClipData clipData = data.getClipData();
+            File[] file = new File[clipData.getItemCount()];
             for (int i = 0; i < clipData.getItemCount(); i++) {
                 ClipData.Item item = clipData.getItemAt(i);
                 uri = item.getUri();
                 items.add(new item(uri));
+                file[i] = new File(String.valueOf(uri));
             }
             recyclerView.setAdapter(adapter);
-            if (imageView != null) {
-                download.setEnabled(true);
+            if (recyclerView.getAdapter() != null && recyclerView.getAdapter().getItemCount() > 0) {
+                download.setEnabled(false);
                 delete.setEnabled(true);
             }
             Toast.makeText(this, "ClipData", Toast.LENGTH_SHORT).show();
+            new PostData().execute(file);
         } else {
             Toast.makeText(this, "返回頁面", Toast.LENGTH_SHORT).show();
             Log.d("error message", String.valueOf(resultCode));
@@ -359,10 +395,6 @@ public class webSocket extends AppCompatActivity {
         @Override
         protected File doInBackground(File... file) {
             try {
-                //import image
-                //因為剛進來時會被包成array
-                File imageFile = file[0];
-
                 // on below line creating a url to post the data.
                 URL url = new URL("http://" + address + ":8080/down"); //192.168.1.108
 
@@ -378,52 +410,47 @@ public class webSocket extends AppCompatActivity {
 
                 //多部分表單數據格式
                 //讓客戶端將各種不同類型的數據（例如文字、圖像、音頻等）作為單個HTTP請求傳送到服務器
-                String boundary_temp = "----WebKitFormBoundary7MA4YWxkTrZu0gW";
+                String boundary_temp = "----WebKitFormBoundary7MA4YWxkTrZu0g";
                 client.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary_temp);
 
                 // Create output stream
                 DataOutputStream outputStream = new DataOutputStream(client.getOutputStream());
 
-                // Write the boundary and header information for the image data
-                String boundary = "----WebKitFormBoundary7MA4YWxkTrZu0gW";
-                String imageFieldName = "image";
-                String fileName = "test" + ".png";
-                String mimeType = "image/png";
-                String header = "--" + boundary + "\r\nContent-Disposition: form-data; name=\"" + imageFieldName + "\"; filename=\"" + fileName + "\"\r\nContent-Type: " + mimeType + "\r\n\r\n";
-                outputStream.writeBytes(header);
 
                 // Write the actual image data
                 InputStream inputStream = null;
+                recyclerView.setAdapter(adapter);
                 try {
-                    inputStream = getContentResolver().openInputStream(uri);
-                    // 在这里处理文件输入流
-                    byte[] buffer = new byte[4096];
-                    int bytesRead;
-                    while ((bytesRead = inputStream.read(buffer)) != -1) {
-                        outputStream.write(buffer, 0, bytesRead);
+                    for (int i = 0; i < file.length; i++) {
+                        // Write the boundary and header information for the image data
+                        String boundary = "----WebKitFormBoundary7MA4YWxkTrZu0g";
+                        String imageFieldName = "image";
+//                        String fileName = System.currentTimeMillis() + ".png";
+                        String fileName = "test" + ".png";
+                        String mimeType = "image/png";
+                        String header = "--" + boundary + "\r\nContent-Disposition: form-data; name=\"" + imageFieldName + "\"; filename=\"" + fileName + "\"\r\nContent-Type: " + mimeType + "\r\n\r\n";
+                        outputStream.writeBytes(header);
+                        inputStream = getContentResolver().openInputStream(items.get(i).image);
+                        // 在这里处理文件输入流
+                        byte[] buffer = new byte[4096];
+                        int bytesRead;
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
                     }
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
-                } finally {
-                    if (inputStream != null) {
-                        try {
-                            inputStream.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
+                }
+                if (inputStream != null) {
+                    try {
+                        inputStream.close();
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
                 }
 
-//                FileInputStream inputStream = new FileInputStream(imageFile);
-//                byte[] buffer = new byte[4096];
-//                int bytesRead;
-//                while ((bytesRead = inputStream.read(buffer)) != -1) {
-//                    outputStream.write(buffer, 0, bytesRead);
-//                }
-//                inputStream.close();
-
-                // Write the closing boundary
-                String footer = "\r\n--" + boundary + "--\r\n";
+                // Closing boundary
+                String footer = "\r\n--" + boundary_temp + "--\r\n";
                 outputStream.writeBytes(footer);
 
                 // Close the output stream
@@ -589,7 +616,10 @@ public class webSocket extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        Log.d("destory", "work");
+//        Log.d("destory", "work");
+        Intent intent = new Intent(webSocket.this, WebSocket_Service.class);
+        intent.setAction("CLOSING_WEBSOCKET");
+        startService(intent);
         unregisterReceiver(broadcastReceiver);
     }
 }
