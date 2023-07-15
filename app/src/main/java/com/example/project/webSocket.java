@@ -3,15 +3,10 @@ package com.example.project;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
-import androidx.core.content.FileProvider;
 import androidx.documentfile.provider.DocumentFile;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.BroadcastReceiver;
 import android.content.ClipData;
 import android.content.ContentUris;
@@ -19,14 +14,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
@@ -35,7 +25,6 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,6 +39,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -57,7 +47,8 @@ public class webSocket extends AppCompatActivity {
 
     ConstraintLayout rootlayout;
     TextView random_value;
-    String address = "34.81.249.124";
+    //    String address = "34.81.249.124";
+    String address = "192.168.1.108";
     //    ImageView imageView;
     Uri uri;
     File imageFile;
@@ -396,7 +387,7 @@ public class webSocket extends AppCompatActivity {
         protected File doInBackground(File... file) {
             try {
                 // on below line creating a url to post the data.
-                URL url = new URL("http://" + address + ":8080/down"); //192.168.1.108
+                URL url = new URL("http://" + address + ":8080/down");
 
                 // on below line opening the connection.
                 HttpURLConnection client = (HttpURLConnection) url.openConnection();
@@ -416,48 +407,45 @@ public class webSocket extends AppCompatActivity {
                 // Create output stream
                 DataOutputStream outputStream = new DataOutputStream(client.getOutputStream());
 
-
                 // Write the actual image data
-                InputStream inputStream = null;
+                InputStream inputStream=null;
                 recyclerView.setAdapter(adapter);
                 try {
+                    String imageFieldName = "image";
                     for (int i = 0; i < file.length; i++) {
                         // Write the boundary and header information for the image data
                         String boundary = "----WebKitFormBoundary7MA4YWxkTrZu0g";
-                        String imageFieldName = "image";
-//                        String fileName = System.currentTimeMillis() + ".png";
-                        String fileName = "test" + ".png";
+                        String fileName = System.currentTimeMillis() + ".png";
+//                        String fileName = i + ".png";
                         String mimeType = "image/png";
-                        String header = "--" + boundary + "\r\nContent-Disposition: form-data; name=\"" + imageFieldName + "\"; filename=\"" + fileName + "\"\r\nContent-Type: " + mimeType + "\r\n\r\n";
+                        String header = "\r\n--" + boundary + "\r\nContent-Disposition: form-data; name=\"" + imageFieldName + "\"; filename=\"" + fileName + "\"\r\nContent-Type: " + mimeType + "\r\n\r\n";
                         outputStream.writeBytes(header);
                         inputStream = getContentResolver().openInputStream(items.get(i).image);
-                        // 在这里处理文件输入流
+                        // copy file
                         byte[] buffer = new byte[4096];
                         int bytesRead;
                         while ((bytesRead = inputStream.read(buffer)) != -1) {
                             outputStream.write(buffer, 0, bytesRead);
                         }
+                        Log.d("table", header);
                     }
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 }
-                if (inputStream != null) {
-                    try {
-                        inputStream.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
+
 
                 // Closing boundary
                 String footer = "\r\n--" + boundary_temp + "--\r\n";
                 outputStream.writeBytes(footer);
 
-                // Close the output stream
+                // Close the input/output stream
+                if (inputStream != null) {
+                    inputStream.close();
+                }
                 outputStream.close();
 
                 // on below line creating and initializing buffer reader.
-                try (BufferedReader br = new BufferedReader(new InputStreamReader(client.getInputStream(), "utf-8"))) {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(client.getInputStream(), StandardCharsets.UTF_8))) {
 
                     // on below line creating a string builder.
                     StringBuilder response = new StringBuilder();
@@ -473,12 +461,12 @@ public class webSocket extends AppCompatActivity {
 
                     runOnUiThread(() -> Toast.makeText(getApplicationContext(), "Data has been posted to the API.", Toast.LENGTH_SHORT).show());
 
-//                    webSocketClient.send(new JSONObject().put("2", "send picture").toString());
-                    Intent intent = new Intent(webSocket.this, WebSocket_Service.class);
-                    intent.putExtra("state", "2");
-                    intent.putExtra("message", "send picture");
-                    intent.setAction("ACTION_MESSAGE");
-                    startService(intent);
+//                    Intent intent = new Intent(webSocket.this, WebSocket_Service.class);
+//                    intent.putExtra("state", "2");
+//                    intent.putExtra("message", "send picture");
+//                    intent.setAction("ACTION_MESSAGE");
+//                    startService(intent);
+
                 }
             } catch (Exception e) {
                 // on below line handling the exception.

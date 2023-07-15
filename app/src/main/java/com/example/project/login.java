@@ -24,10 +24,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 
 public class login extends AppCompatActivity {
 
-    EditText address;
+    EditText account;
+    //    String address = "34.81.249.124";
+    String address = "192.168.1.108";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,7 +38,7 @@ public class login extends AppCompatActivity {
         setContentView(R.layout.activity_login);
 
         /** 宣告變數 */
-        address = findViewById(R.id.address);
+        account = findViewById(R.id.address);
         EditText password = findViewById(R.id.password);
         Button login = findViewById(R.id.login);
         Button register = findViewById(R.id.register);
@@ -45,12 +48,12 @@ public class login extends AppCompatActivity {
 
         /** 按鈕監聽 */
         login.setOnClickListener(v -> {
-            if (address.length() < 1 || password.length() < 1) {
+            if (account.length() < 1 || password.length() < 1) {
                 Toast.makeText(this, "請輸入帳號、密碼", Toast.LENGTH_SHORT).show();
             } else {
                 try {
                     JSONObject jsonObject = new JSONObject();
-                    jsonObject.put(address.getText().toString(), password.getText().toString());
+                    jsonObject.put(account.getText().toString(), password.getText().toString());
                     String jsonString = jsonObject.toString();
                     new PostDate().execute(jsonString);
                 } catch (JSONException e) {
@@ -59,12 +62,12 @@ public class login extends AppCompatActivity {
             }
         });
         register.setOnClickListener(v -> {
-            if (address.length() < 1 || password.length() < 1) {
+            if (account.length() < 1 || password.length() < 1) {
                 Toast.makeText(this, "請輸入帳號、密碼", Toast.LENGTH_SHORT).show();
             } else {
                 try {
                     JSONObject jsonObject = new JSONObject();
-                    jsonObject.put(address.getText().toString(), password.getText().toString());
+                    jsonObject.put(account.getText().toString(), password.getText().toString());
                     String jsonString = jsonObject.toString();
                     new PostDate_2().execute(jsonString);
                 } catch (JSONException e) {
@@ -80,7 +83,7 @@ public class login extends AppCompatActivity {
         protected String doInBackground(String... strings) {
             try {
                 // on below line creating a url to post the data.
-                URL url = new URL("http://34.81.249.124:8080/login");
+                URL url = new URL("http://" + address + ":8080/login");
 
                 // on below line opening the connection.
                 HttpURLConnection client = (HttpURLConnection) url.openConnection();
@@ -99,7 +102,7 @@ public class login extends AppCompatActivity {
 
                 // on below line we are creating an output stream and posting the data.
                 try (OutputStream os = client.getOutputStream()) {
-                    byte[] input = strings[0].getBytes("utf-8");
+                    byte[] input = strings[0].getBytes(StandardCharsets.UTF_8);
                     os.write(input, 0, input.length);
                 }
 
@@ -115,13 +118,13 @@ public class login extends AppCompatActivity {
                     if (stringBuilder.toString().equals("login successfully")) {
                         // 顯示 Toast 訊息
                         runOnUiThread(() -> Toast.makeText(login.this, stringBuilder.toString(), Toast.LENGTH_SHORT).show());
-                        Intent intent=new Intent(login.this, start.class);
+                        Intent intent = new Intent(login.this, start.class);
                         startActivity(intent);
                         //
                         Intent intent1 = new Intent(login.this, WebSocket_Service.class);
                         intent1.setAction("ACTION_MESSAGE");
                         intent1.putExtra("state", "3");
-                        intent1.putExtra("message", address.getText().toString());
+                        intent1.putExtra("message", account.getText().toString());
                         startService(intent1);
                         finish();
                     } else {
@@ -143,7 +146,7 @@ public class login extends AppCompatActivity {
         protected String doInBackground(String... strings) {
             try {
                 // on below line creating a url to post the data.
-                URL url = new URL("http://34.81.249.124:8080/registe");
+                URL url = new URL("http://" + address + ":8080/registe");
 
                 // on below line opening the connection.
                 HttpURLConnection client = (HttpURLConnection) url.openConnection();
@@ -163,7 +166,7 @@ public class login extends AppCompatActivity {
 
                 // on below line we are creating an output stream and posting the data.
                 try (OutputStream os = client.getOutputStream()) {
-                    byte[] input = strings[0].getBytes("utf-8");
+                    byte[] input = strings[0].getBytes(StandardCharsets.UTF_8);
                     os.write(input, 0, input.length);
                 }
 
@@ -180,13 +183,13 @@ public class login extends AppCompatActivity {
                     if (stringBuilder.toString().equals("working to create")) {
                         // 顯示 Toast 訊息
                         runOnUiThread(() -> Toast.makeText(login.this, stringBuilder.toString(), Toast.LENGTH_SHORT).show());
-                        Intent intent=new Intent(login.this, start.class).putExtra("name", address.getText().toString());
+                        Intent intent = new Intent(login.this, start.class).putExtra("name", account.getText().toString());
                         startActivity(intent);
                         //
                         Intent intent1 = new Intent(login.this, WebSocket_Service.class);
                         intent1.setAction("ACTION_MESSAGE");
                         intent1.putExtra("state", "3");
-                        intent1.putExtra("message", address.getText().toString());
+                        intent1.putExtra("message", account.getText().toString());
                         startService(intent1);
                         finish();
                     } else {

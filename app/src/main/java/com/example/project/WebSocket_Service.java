@@ -1,22 +1,10 @@
 package com.example.project;
 
-import android.app.DownloadManager;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Color;
-import android.net.Uri;
-import android.os.Environment;
 import android.os.IBinder;
-import android.util.Base64;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
-
-import androidx.core.content.FileProvider;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
@@ -24,19 +12,17 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 
 public class WebSocket_Service extends Service {
 
     private WebSocketClient webSocketClient = null;
-    String address = "34.81.249.124";
+    //    String address = "34.81.249.124";
+    String address = "192.168.1.108";
     Intent intent;
 
     @Override
@@ -58,7 +44,7 @@ public class WebSocket_Service extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null) {
-            if (webSocketClient==null) {
+            if (webSocketClient == null) {
                 Log.d("connect", "reconnect");
                 connectWebSocket();
             }
@@ -78,7 +64,7 @@ public class WebSocket_Service extends Service {
             } else if (action != null && action.equals("CLOSING_WEBSOCKET")) {
                 Log.d("test", webSocketClient.getReadyState().toString());
                 webSocketClient.close();
-                webSocketClient=null;
+                webSocketClient = null;
             }
         }
 //        Log.d("onStartCommand", "test");
