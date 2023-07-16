@@ -17,22 +17,19 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class WebSocket_Service extends Service {
 
     private WebSocketClient webSocketClient = null;
     //    String address = "34.81.249.124";
     String address = "192.168.1.108";
-    Intent intent;
+    Intent intent = new Intent("service");
 
     @Override
     public void onCreate() {
         super.onCreate();
         Log.d("start", "created");
-//        connectWebSocket();
-        intent = new Intent("service");
-//        intent.putExtra("test", "work");
-//        sendBroadcast(intent);
     }
 
     @Override
@@ -62,7 +59,7 @@ public class WebSocket_Service extends Service {
                     }
                 }
             } else if (action != null && action.equals("CLOSING_WEBSOCKET")) {
-                Log.d("test", webSocketClient.getReadyState().toString());
+//                Log.d("test", webSocketClient.getReadyState().toString());
                 webSocketClient.close();
                 webSocketClient = null;
             }
@@ -82,6 +79,10 @@ public class WebSocket_Service extends Service {
         Log.d("connect_test", uri_2.toString());
 
         webSocketClient = new WebSocketClient(uri_2) {
+            String[] temp = null;
+            int i = 0;
+            boolean lock = true;
+
             @Override
             public void onOpen(ServerHandshake handshakedata) {
                 // 連接成功
@@ -93,7 +94,14 @@ public class WebSocket_Service extends Service {
                 // 收到訊息
                 Log.d("onMessage", message);
                 intent.putExtra("services", message);
-                sendBroadcast(intent);
+                if (message.startsWith("filenames")) {
+                    String substring = message.substring(message.indexOf("filenames") + "filenames".length());
+                    temp = substring.split(",");
+                    Log.d("file", Arrays.toString(temp));
+                    lock = false;
+                } else {
+                    sendBroadcast(intent);
+                }
             }
 
             @Override
@@ -101,18 +109,35 @@ public class WebSocket_Service extends Service {
                 try {
                     // 收到二进制消息（图像数据）
                     byte[] imageData = bytes.array();
-                    System.out.println("onMessage: Received image data");
-                    //
-                    File file = new File(getCacheDir(), "image.png");
-                    FileOutputStream outputStream = new FileOutputStream(file);
-                    outputStream.write(imageData);
-                    outputStream.close();
+                    Log.d("onMessage", "Received image data");
 
-                    // 在这里处理接收到的图像数据
-                    intent.putExtra("services", "image");
-                    intent.putExtra("image", file.getAbsoluteFile().toString());
-                    sendBroadcast(intent);
-                } catch (IOException e) {
+                    while (lock) {
+                        Thread.sleep(2000);
+                        Log.d("wait", "waiting");
+                    }
+
+                    Log.d("temp state", temp.length + ":" + i);
+                    //
+                    if (temp.length > 0 && i != temp.length) {
+                        Log.d("image", temp[i]);
+                        File file = new File(getCacheDir(), temp[i]); // need to edit
+                        FileOutputStream outputStream = new FileOutputStream(file);
+                        outputStream.write(imageData);
+                        outputStream.close();
+                        i++;
+                        // 在这里处理接收到的图像数据
+                        intent.putExtra("services", "image");
+                        intent.putExtra("image", file.getAbsoluteFile().toString());
+                        sendBroadcast(intent);
+                        if (i == temp.length) {
+                            lock = true;
+                            i = 0;
+                            temp = null;
+                        }
+                    } else {
+                        Log.d("error", "no image");
+                    }
+                } catch (IOException | InterruptedException e) {
                     e.printStackTrace();
                 }
             }
@@ -130,9 +155,7 @@ public class WebSocket_Service extends Service {
                 Toast.makeText(WebSocket_Service.this, "restart app", Toast.LENGTH_SHORT).show();
             }
         };
-
         webSocketClient.connect();
-
     }
 
     @Override

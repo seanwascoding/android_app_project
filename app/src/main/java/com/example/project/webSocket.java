@@ -49,7 +49,6 @@ public class webSocket extends AppCompatActivity {
     TextView random_value;
     //    String address = "34.81.249.124";
     String address = "192.168.1.108";
-    //    ImageView imageView;
     Uri uri;
     File imageFile;
     Button select;
@@ -72,7 +71,6 @@ public class webSocket extends AppCompatActivity {
         enter_keywords = findViewById(R.id.enter_keywords);
         Button post_keywords = findViewById(R.id.post_keywords);
         select = findViewById(R.id.select);
-//        imageView = findViewById(R.id.image_data);
         download = findViewById(R.id.download);
         delete = findViewById(R.id.delete);
         recyclerView = findViewById(R.id.image_gallery);
@@ -134,9 +132,7 @@ public class webSocket extends AppCompatActivity {
 
         /** download / delete */
         download.setOnClickListener(v -> {
-//            Drawable drawable = imageView.getDrawable();
             if (recyclerView.getAdapter() != null && recyclerView.getAdapter().getItemCount() > 0) {
-//                Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
                 String downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString();
                 String fileName = "test.png";
                 File file = new File(downloadDir, fileName);
@@ -200,10 +196,13 @@ public class webSocket extends AppCompatActivity {
     }
 
     private final BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+        int times;
+        int i = 0;
+
         @Override
         public void onReceive(Context context, Intent intent) {
             String message = intent.getStringExtra("services");
-//            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
             if (message.equals("client working connected")) {
                 runOnUiThread(() -> {
                     rootlayout.setBackgroundColor(Color.MAGENTA);
@@ -217,22 +216,30 @@ public class webSocket extends AppCompatActivity {
                     select.setVisibility(View.INVISIBLE);
                 });
             } else if (message.equals("image")) {
-                Log.d("test", "recieve");
+                Log.d("test", "receive");
                 filepath = intent.getStringExtra("image");
-//                File file = new File(filepath);
-//                Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
-//                runOnUiThread(() -> imageView.setImageBitmap(bitmap));
                 uri = Uri.parse(filepath);
-//                uri = FileProvider.getUriForFile(context, "com.example.project.fileprovider", file);
-                items.clear();
                 items.add(new item(uri));
-                recyclerView.setAdapter(adapter);
-                if (recyclerView.getAdapter() != null && recyclerView.getAdapter().getItemCount() > 0) {
-                    download.setEnabled(true);
-                    delete.setEnabled(true);
+                i++;
+                if (i == times) {
+                    i=0;
+                    recyclerView.setAdapter(adapter);
+                    if (recyclerView.getAdapter() != null && recyclerView.getAdapter().getItemCount() > 0) {
+                        download.setEnabled(true);
+                        delete.setEnabled(true);
+                    }
+                } else {
+                    Log.d("state", i + ":" + times);
                 }
-            } else if (message.length() > 1) {
+            } else if (message.length() > 1 && !message.startsWith("times")) {
+                // receive message
                 runOnUiThread(() -> random_value.setText(message));
+            } else if (message.startsWith("times")) {
+                items.clear();
+//                runOnUiThread(() -> Toast.makeText(context, "error situation", Toast.LENGTH_SHORT).show());
+                String substring = message.substring(message.indexOf("times") + "times".length());
+                times = Integer.parseInt(substring);
+                runOnUiThread(() -> Toast.makeText(context, String.valueOf(times), Toast.LENGTH_SHORT).show());
             } else {
                 runOnUiThread(() -> Toast.makeText(context, "error situation", Toast.LENGTH_SHORT).show());
             }
@@ -306,82 +313,6 @@ public class webSocket extends AppCompatActivity {
         return sb.toString();
     }
 
-//    private void connectWebSocket() {
-//        URI uri_2;
-//        try {
-//            uri_2 = new URI("ws://" + address + ":8080/");
-//        } catch (URISyntaxException e) {
-//            e.printStackTrace();
-//            return;
-//        }
-//        Log.d("connect_test", uri_2.toString());
-//
-//        webSocketClient = new WebSocketClient(uri_2) {
-//            @Override
-//            public void onOpen(ServerHandshake handshakedata) {
-//                // 連接成功
-//                Log.d("onOpen", "working to connect");
-//                try {
-//                    webSocketClient.send(new JSONObject().put("3", name).toString());
-//                } catch (JSONException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//
-//            @Override
-//            public void onMessage(String message) {
-//                // 收到訊息
-//                Log.d("onMessage", message);
-//                runOnUiThread(() -> Toast.makeText(webSocket.this, message, Toast.LENGTH_SHORT).show());
-//                if (message.equals("client working connected")) {
-//                    runOnUiThread(() -> {
-//                        rootlayout.setBackgroundColor(Color.MAGENTA);
-//                        random_value.setText("Connecting");
-//                        select.setVisibility(View.VISIBLE);
-//                    });
-//                } else if (message.equals("disconnected")) {
-//                    runOnUiThread(() -> {
-//                        rootlayout.setBackgroundColor(Color.WHITE);
-//                        random_value.setText(message);
-//                        select.setVisibility(View.INVISIBLE);
-//                    });
-//                } else if (message.length() > 1) {
-//                    runOnUiThread(() -> {
-//                        random_value.setText(message);
-//                    });
-//                }
-//            }
-//
-//            @Override
-//            public void onMessage(ByteBuffer bytes) {
-//                // 收到二进制消息（图像数据）
-//                byte[] imageData = bytes.array();
-//                System.out.println("onMessage: Received image data");
-//                // 在这里处理接收到的图像数据
-//                Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
-//                runOnUiThread(() -> {
-//                    imageView.setImageBitmap(bitmap);
-//                    Toast.makeText(webSocket.this, "receive date", Toast.LENGTH_SHORT).show();
-//                });
-//            }
-//
-//            @Override
-//            public void onClose(int code, String reason, boolean remote) {
-//                // 連線關閉
-//                Log.d("close", "close connect");
-//            }
-//
-//            @Override
-//            public void onError(Exception ex) {
-//                // 連線錯誤
-//                Log.d("error", "error connect");
-//            }
-//        };
-//
-//        webSocketClient.connect();
-//
-//    }
-
     class PostData extends AsyncTask<File, Void, File> {
         @Override
         protected File doInBackground(File... file) {
@@ -408,15 +339,13 @@ public class webSocket extends AppCompatActivity {
                 DataOutputStream outputStream = new DataOutputStream(client.getOutputStream());
 
                 // Write the actual image data
-                InputStream inputStream=null;
-                recyclerView.setAdapter(adapter);
+                InputStream inputStream = null;
                 try {
                     String imageFieldName = "image";
                     for (int i = 0; i < file.length; i++) {
                         // Write the boundary and header information for the image data
                         String boundary = "----WebKitFormBoundary7MA4YWxkTrZu0g";
                         String fileName = System.currentTimeMillis() + ".png";
-//                        String fileName = i + ".png";
                         String mimeType = "image/png";
                         String header = "\r\n--" + boundary + "\r\nContent-Disposition: form-data; name=\"" + imageFieldName + "\"; filename=\"" + fileName + "\"\r\nContent-Type: " + mimeType + "\r\n\r\n";
                         outputStream.writeBytes(header);
@@ -461,12 +390,11 @@ public class webSocket extends AppCompatActivity {
 
                     runOnUiThread(() -> Toast.makeText(getApplicationContext(), "Data has been posted to the API.", Toast.LENGTH_SHORT).show());
 
-//                    Intent intent = new Intent(webSocket.this, WebSocket_Service.class);
-//                    intent.putExtra("state", "2");
-//                    intent.putExtra("message", "send picture");
-//                    intent.setAction("ACTION_MESSAGE");
-//                    startService(intent);
-
+                    Intent intent = new Intent(webSocket.this, WebSocket_Service.class);
+                    intent.putExtra("state", "2");
+                    intent.putExtra("message", response.toString());
+                    intent.setAction("ACTION_MESSAGE");
+                    startService(intent);
                 }
             } catch (Exception e) {
                 // on below line handling the exception.
