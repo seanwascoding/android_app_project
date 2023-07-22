@@ -42,6 +42,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.UUID;
 
 public class webSocket extends AppCompatActivity {
 
@@ -222,7 +223,7 @@ public class webSocket extends AppCompatActivity {
                 items.add(new item(uri));
                 i++;
                 if (i == times) {
-                    i=0;
+                    i = 0;
                     recyclerView.setAdapter(adapter);
                     if (recyclerView.getAdapter() != null && recyclerView.getAdapter().getItemCount() > 0) {
                         download.setEnabled(true);
@@ -340,12 +341,14 @@ public class webSocket extends AppCompatActivity {
 
                 // Write the actual image data
                 InputStream inputStream = null;
+                String temp = UUID.randomUUID().toString(); //generateRandomValue(10);
+                Log.d("uuid", temp);
                 try {
                     String imageFieldName = "image";
                     for (int i = 0; i < file.length; i++) {
                         // Write the boundary and header information for the image data
                         String boundary = "----WebKitFormBoundary7MA4YWxkTrZu0g";
-                        String fileName = System.currentTimeMillis() + ".png";
+                        String fileName = temp + System.currentTimeMillis() + ".png";
                         String mimeType = "image/png";
                         String header = "\r\n--" + boundary + "\r\nContent-Disposition: form-data; name=\"" + imageFieldName + "\"; filename=\"" + fileName + "\"\r\nContent-Type: " + mimeType + "\r\n\r\n";
                         outputStream.writeBytes(header);
@@ -361,7 +364,6 @@ public class webSocket extends AppCompatActivity {
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 }
-
 
                 // Closing boundary
                 String footer = "\r\n--" + boundary_temp + "--\r\n";
