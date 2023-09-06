@@ -24,16 +24,20 @@
         <service
             android:name=".WebSocket_Service"
             android:enabled="true"
-            android:exported="true"></service>
+            android:exported="true">
+        </service>
 
         <activity
+            android:windowSoftInputMode="adjustPan"
             android:name=".webSocket"
+            android:screenOrientation="portrait"
             android:exported="false">
             <meta-data
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
         <activity
+            android:windowSoftInputMode="adjustPan"
             android:name=".login"
             android:exported="true">
             <meta-data

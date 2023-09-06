@@ -30,7 +30,7 @@ public class login extends AppCompatActivity {
 
     EditText account;
     //    String address = "34.81.249.124";
-    String address = "192.168.1.108";
+    String address = "192.168.1.101";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

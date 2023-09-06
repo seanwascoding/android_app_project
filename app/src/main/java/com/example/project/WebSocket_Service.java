@@ -23,7 +23,7 @@ public class WebSocket_Service extends Service {
 
     private WebSocketClient webSocketClient = null;
     //    String address = "34.81.249.124";
-    String address = "192.168.1.108";
+    String address = "192.168.1.101";
     Intent intent = new Intent("service");
 
     @Override

@@ -49,7 +49,7 @@ public class webSocket extends AppCompatActivity {
     ConstraintLayout rootlayout;
     TextView random_value;
     //    String address = "34.81.249.124";
-    String address = "192.168.1.108";
+    String address = "192.168.1.101";
     Uri uri;
     File imageFile;
     Button select;
@@ -59,7 +59,6 @@ public class webSocket extends AppCompatActivity {
     ArrayList<item> items = new ArrayList<>();
     Adapter adapter = new Adapter(items, R.layout.image_recycle);
     RecyclerView recyclerView;
-    String filepath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -106,16 +105,6 @@ public class webSocket extends AppCompatActivity {
                 intent.putExtra("message", enter_keywords.getText().toString());
                 intent.setAction("ACTION_MESSAGE");
                 startService(intent);
-//                try {mBfLXtWxuL
-//                    JSONObject jsonObject = new JSONObject();
-//                    jsonObject.put("1", enter_keywords.getText());
-//                    String jsonString = jsonObject.toString();
-//                    webSocketClient.send(jsonString);
-//                    enter_keywords.setText(null);
-//                    enter_keywords.clearFocus();
-//                } catch (JSONException e) {
-//                    e.printStackTrace();
-//                }
             }
             enter_keywords.setText(null);
         });
@@ -134,47 +123,66 @@ public class webSocket extends AppCompatActivity {
         /** download / delete */
         download.setOnClickListener(v -> {
             if (recyclerView.getAdapter() != null && recyclerView.getAdapter().getItemCount() > 0) {
-                String downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString();
-                String fileName = "test.png";
-                File file = new File(downloadDir, fileName);
-                try {
-                    // 讀取文件
-//                    InputStream inputStream = getContentResolver().openInputStream(uri);
-                    FileInputStream inputStream = new FileInputStream(filepath);
+                for(int i=0; i< items.size();i++){
+                    String filename=items.get(i).image.toString();
+                    File read_file = new File(filename);
+                    File output_file=new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).toString(), read_file.getName());
+                    try {
+                        // read file
+                        FileInputStream inputStream = new FileInputStream(read_file);
 
-                    // 寫入文件
-                    FileOutputStream outputStream = new FileOutputStream(file);
-//                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+                        // write file
+                        FileOutputStream outputStream = new FileOutputStream(output_file);
 
-                    // 複製資料
-                    byte[] buffer = new byte[1024];
-                    int bytesRead;
-                    while ((bytesRead = inputStream.read(buffer)) != -1) {
-                        outputStream.write(buffer, 0, bytesRead);
+                        // copy file (stream)
+                        byte[] buffer = new byte[1024];
+                        int bytesRead;
+                        while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            outputStream.write(buffer, 0, bytesRead);
+                        }
+
+                        // close stream
+                        outputStream.close();
+                        inputStream.close();
+
+                        // call system to update media (specific name)
+                        Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+                        intent.setData(Uri.fromFile(output_file));
+                        sendBroadcast(intent);
+                    } catch (IOException e) {
+                        e.printStackTrace();
                     }
-
-                    // close stream
-                    outputStream.close();
-                    inputStream.close();
-                    filepath = null;
-
-                    // 呼叫系統檢查更新media
-                    Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-                    intent.setData(Uri.fromFile(file));
-                    sendBroadcast(intent);
-                    Toast.makeText(this, "download complete", Toast.LENGTH_SHORT).show();
-
-                    //
-                    download.setEnabled(false);
-
-                } catch (IOException e) {
-                    e.printStackTrace();
                 }
+                // delete cache
+                for (int i=0; i< items.size();i++){
+                    File cache_data=new File(items.get(i).image.toString());
+                    if (cache_data.delete()) {
+                        System.out.println("delete cache work");
+                    } else {
+                        System.out.println("no working delete cache");
+                    }
+                }
+                Toast.makeText(this, "download complete", Toast.LENGTH_SHORT).show();
+                // turn off button & reset
+                download.setEnabled(false);
             } else {
                 Toast.makeText(this, "error", Toast.LENGTH_SHORT).show();
             }
         });
+
+        //todo delete cache image
         delete.setOnClickListener(v -> {
+            // delete cache
+            for (int i=0; i< items.size();i++){
+                File cache_data=new File(items.get(i).image.toString());
+                if (cache_data.delete()) {
+                    System.out.println("delete cache work");
+                } else {
+                    System.out.println("no working delete cache");
+                }
+            }
+
+            // clear temp
             items.clear();
             recyclerView.setAdapter(adapter);
 //            imageView.setImageBitmap(null);
@@ -218,7 +226,7 @@ public class webSocket extends AppCompatActivity {
                 });
             } else if (message.equals("image")) {
                 Log.d("test", "receive");
-                filepath = intent.getStringExtra("image");
+                String filepath = intent.getStringExtra("image");
                 uri = Uri.parse(filepath);
                 items.add(new item(uri));
                 i++;
@@ -229,6 +237,7 @@ public class webSocket extends AppCompatActivity {
                         download.setEnabled(true);
                         delete.setEnabled(true);
                     }
+//                    Log.d("uri test", items.get(0).image.toString());
                 } else {
                     Log.d("state", i + ":" + times);
                 }
@@ -327,6 +336,9 @@ public class webSocket extends AppCompatActivity {
                 // on below line setting client.
                 //用於指示此連接是否允許輸出數據
                 client.setDoOutput(true);
+
+                // read timeout
+                client.setReadTimeout(10000000);
 
                 // on below line setting method as post.
                 client.setRequestMethod("POST");
