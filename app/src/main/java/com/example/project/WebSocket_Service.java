@@ -107,7 +107,6 @@ public class WebSocket_Service extends Service {
             @Override
             public void onMessage(ByteBuffer bytes) {
                 try {
-                    // 收到二进制消息（图像数据）
                     byte[] imageData = bytes.array();
                     Log.d("onMessage", "Received image data");
 

@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public class login extends AppCompatActivity {
 
@@ -75,6 +76,11 @@ public class login extends AppCompatActivity {
                 }
             }
         });
+
+        /** test */
+//        test_ndk test_ndk=new test_ndk();
+//        double[] result = test_ndk.test("C:\\Users\\Sean\\Pictures\\Screenshots\\jtop.png");
+//        Log.d("ndk", Arrays.toString(result));
 
     }
 
