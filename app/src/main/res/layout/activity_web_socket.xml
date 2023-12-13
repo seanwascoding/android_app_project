@@ -109,8 +109,10 @@
         android:layout_marginBottom="10dp"
         app:layout_constraintBottom_toTopOf="@+id/delete"
         app:layout_constraintEnd_toStartOf="@+id/guideline4"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="@+id/guideline3"
-        app:layout_constraintTop_toBottomOf="@+id/post_keywords" />
+        app:layout_constraintTop_toBottomOf="@+id/post_keywords"
+        app:layout_constraintVertical_bias="1.0" />
 
     <TextView
         android:id="@+id/random_output"
@@ -123,5 +125,17 @@
         app:layout_constraintEnd_toStartOf="@+id/guideline4"
         app:layout_constraintStart_toStartOf="@+id/guideline3"
         app:layout_constraintTop_toBottomOf="@+id/create_random_value" />
+
+    <Button
+        android:id="@+id/decryption_button"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:text="Decryption"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toStartOf="@+id/guideline4"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="@+id/guideline3"
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

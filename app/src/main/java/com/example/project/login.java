@@ -2,14 +2,9 @@ package com.example.project;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -25,13 +20,12 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 public class login extends AppCompatActivity {
 
     EditText account;
-    //    String address = "34.81.249.124";
-    String address = "192.168.1.101";
+    String address = "192.168.1.104";
+//    String address = "35.201.153.23";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,11 +71,6 @@ public class login extends AppCompatActivity {
             }
         });
 
-        /** test */
-//        test_ndk test_ndk=new test_ndk();
-//        double[] result = test_ndk.test("C:\\Users\\Sean\\Pictures\\Screenshots\\jtop.png");
-//        Log.d("ndk", Arrays.toString(result));
-
     }
 
     class PostDate extends AsyncTask<String, Void, String> {
@@ -124,7 +113,7 @@ public class login extends AppCompatActivity {
                     if (stringBuilder.toString().equals("login successfully")) {
                         // 顯示 Toast 訊息
                         runOnUiThread(() -> Toast.makeText(login.this, stringBuilder.toString(), Toast.LENGTH_SHORT).show());
-                        Intent intent = new Intent(login.this, start.class);
+                        Intent intent = new Intent(login.this, webSocket.class);
                         startActivity(intent);
                         //
                         Intent intent1 = new Intent(login.this, WebSocket_Service.class);
@@ -152,7 +141,7 @@ public class login extends AppCompatActivity {
         protected String doInBackground(String... strings) {
             try {
                 // on below line creating a url to post the data.
-                URL url = new URL("http://" + address + ":8080/registe");
+                URL url = new URL("http://" + address + ":8080/register");
 
                 // on below line opening the connection.
                 HttpURLConnection client = (HttpURLConnection) url.openConnection();
@@ -189,7 +178,7 @@ public class login extends AppCompatActivity {
                     if (stringBuilder.toString().equals("working to create")) {
                         // 顯示 Toast 訊息
                         runOnUiThread(() -> Toast.makeText(login.this, stringBuilder.toString(), Toast.LENGTH_SHORT).show());
-                        Intent intent = new Intent(login.this, start.class).putExtra("name", account.getText().toString());
+                        Intent intent = new Intent(login.this, webSocket.class).putExtra("name", account.getText().toString());
                         startActivity(intent);
                         //
                         Intent intent1 = new Intent(login.this, WebSocket_Service.class);

@@ -22,8 +22,8 @@ import java.util.Arrays;
 public class WebSocket_Service extends Service {
 
     private WebSocketClient webSocketClient = null;
-    //    String address = "34.81.249.124";
-    String address = "192.168.1.101";
+    String address = "192.168.1.104";
+    //    String address = "35.201.153.23";
     Intent intent = new Intent("service");
 
     @Override
